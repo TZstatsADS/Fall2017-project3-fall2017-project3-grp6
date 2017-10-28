@@ -70,7 +70,7 @@ model_labels = paste("GBM with depth =", model_values)
 For the example of zip code digits, we code digit 9 as "1" and digit 7 as "0" for binary classification.
 
 ```{r train_label}
-label_train <- read.table(paste(experiment_dir, "train_label.txt", sep=""),
+label_train <- read.table(paste(experiment_dir, "label_train.txt", sep=""),
                           header=F)
 label_train <- as.numeric(unlist(label_train) == "9")
 ```
