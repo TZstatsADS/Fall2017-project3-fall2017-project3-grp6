@@ -1,37 +1,58 @@
-#########################################################
-### Train a classification model with training images ###
-#########################################################
 
-### Author: Yuting Ma
-### Project 3
-### ADS Spring 2016
+library(gbm)
+library(caret)
+library(DMwR)
+library(nnet)
+library(randomForest)
+library(e1071)
 
+############ gbm ######################
 
-train <- function(dat_train, label_train, par=NULL){
-  
-  ### Train a Gradient Boosting Model (GBM) using processed features from training images
-  
-  ### Input: 
-  ###  -  processed features from images 
-  ###  -  class labels for training images
-  ### Output: training model specification
-  
-  ### load libraries
-  library("gbm")
-  
-  ### Train with gradient boosting model
-  if(is.null(par)){
-    depth <- 3
-  } else {
-    depth <- par$depth
-  }
-  fit_gbm <- gbm.fit(x=dat_train, y=label_train,
-                     n.trees=2000,
-                     distribution="bernoulli",
-                     interaction.depth=depth, 
-                     bag.fraction = 0.5,
-                     verbose=FALSE)
+train.baseline<-function(X, y, depth, shrinkage){
+  fit_gbm = gbm.fit(X, y,
+                    distribution = "multinomial",
+                    n.trees = 250,
+                    interaction.depth = depth, 
+                    shrinkage = shrinkage,
+                    bag.fraction = 0.5,
+                    verbose=FALSE)
   best_iter <- gbm.perf(fit_gbm, method="OOB", plot.it = FALSE)
-
   return(list(fit=fit_gbm, iter=best_iter))
 }
+
+############ BP network ######################
+train.bp<- function(traindata) {
+  traindata$y<- as.factor(traindata$y)
+  model.nnet <- nnet(y ~ ., data = traindata, linout = F,
+                     size = 1, decay = 0.01, maxit = 200,
+                     trace = F, MaxNWts=6000)
+  return(model.nnet)
+}
+
+############ Random Forest ######################
+# First tune random forest model, tune parameter 'mtry'
+train.rf<- function(traindata) {
+  
+  traindata$y<- as.factor(traindata$y)
+  y.index<- which(colnames(traindata)=="y")
+  bestmtry <- tuneRF(y= traindata$y, x= traindata[,-y.index], stepFactor=1.5, improve=1e-5, ntree=600)
+  best.mtry <- bestmtry[,1][which.min(bestmtry[,2])]
+  
+  
+  model.rf <- randomForest(y ~ ., data = traindata, ntree=600, mtry=best.mtry, importance=T)
+  return(model.rf)
+}
+
+############ SVM ######################
+train.svm<- function(traindata) {
+  traindata$y<- as.factor(traindata$y)
+  model.svm<- svm(y~., data = traindata,cost=100, gamma=0.01)
+  return(model.svm)
+}
+
+############ Logistic ######################
+train.log <- function(train_data){
+  model.log = multinom(y~., data=train_data)
+  return(summary(model.log))
+}
+

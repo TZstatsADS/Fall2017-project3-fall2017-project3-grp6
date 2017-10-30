@@ -1,26 +1,41 @@
-######################################################
-### Fit the classification model with testing data ###
-######################################################
+library(gbm)
+library(caret)
+library(DMwR)
+library(nnet)
+library(randomForest)
+library(e1071)
 
-### Author: Yuting Ma
-### Project 3
-### ADS Spring 2016
+############ gbm ######################
 
-test <- function(fit_train, dat_test){
-  
-  ### Fit the classfication model with testing data
-  
-  ### Input: 
-  ###  - the fitted classification model using training data
-  ###  -  processed features from testing images 
-  ### Output: training model specification
-  
-  ### load libraries
-  library("gbm")
-  
-  pred <- predict(fit_train$fit, newdata=dat_test, 
-                  n.trees=fit_train$iter, type="response")
-  
-  return(as.numeric(pred> 0.5))
+test.baseline=function(model,test.data)
+{
+  prediction=ifelse(predict(model$gbm,test.data,n.trees=model$n)>0,1,0)
+  return(prediction)
 }
 
+############ BP network ######################
+test.bp=function(model,test.data)
+{
+  pre.nnet <- predict(model, test.data, type = "class")
+  return(pre.nnet)
+}
+
+############ Random Forest ######################
+test.rf <- function(model,test.data) {
+  return(predict(model, test.data, type = "class"))
+}
+
+
+############ SVM ######################
+test.svm <- function(model,test.data)
+{
+  return(predict(model,test.data,type="class"))
+}
+
+############ Logistic ######################
+test.log <- function(model, test_data) 
+{
+  result<- predict(model,newdata =test_data,type = 'response')
+  fitted.results <- ifelse(result>0.5,1,0)
+  return(fitted.results)
+}
