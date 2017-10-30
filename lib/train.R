@@ -1,4 +1,5 @@
-
+library(readr)
+library(xgboost)
 library(gbm)
 library(caret)
 library(DMwR)
@@ -52,7 +53,18 @@ train.svm<- function(traindata) {
 
 ############ Logistic ######################
 train.log <- function(train_data){
-  model.log = multinom(y~., data=train_data)
-  return(summary(model.log))
+  model.log = multinom(y~., data=train_data,trace = F)
+  
+  return(model.log)
 }
-
+#############xgboost########################
+train.xgboost = function(training){
+  trainnn<-as.matrix(training)
+  dtrain=xgb.DMatrix(data=trainnn[,-1],label=trainnn[,1])
+  param <- list("objective" = "multi:softmax",
+                "eval_metric" = "mlogloss",
+                "num_class" = 3, 'eta' = 0.3, 'max_depth' = 4)
+  bst <- xgb.train(data = dtrain,  param = param, nrounds = 1000)
+  return(bst)
+}
+#############Final Model:

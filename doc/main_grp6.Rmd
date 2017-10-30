@@ -13,7 +13,7 @@ if(!require("EBImage")){
   biocLite("EBImage")
 }
 
-packages.used=c("gbm", "caret","DMwR" ,"nnet","randomForest","e1071")
+packages.used=c("gbm", "caret","DMwR" ,"nnet","randomForest","e1071","data.table","readr","xgboost")
 packages.needed=setdiff(packages.used, 
                         intersect(installed.packages()[,1], 
                                   packages.used))
@@ -28,10 +28,12 @@ library("DMwR")
 library("nnet")
 library("randomForest")
 library("e1071")
+library("data.table")
+library("xgboost")
 ```
 #Set the working directory to the image folder.
 ```{r}
-setwd("/Users/sijian/Documents/Github/Fall2017-project3-fall2017-project3-grp6/doc") 
+setwd("/Users/sijianxuan/Documents/Github/Fall2017-project3-fall2017-project3-grp6/doc") 
 # here replace it with your own path or manually set it in RStudio to where this rmd file is located.
 ```
 #Read Data
@@ -123,15 +125,65 @@ table(svm.pre,test.lbp$y)
 ##Logistic Regression + LBP
 ```{r}
 log.model <- train.log(train.lbp)
-log.pre=test.log(log.model, test.x.lbp)
-P
+log.pre=test.log(log.model,test.x.lbp)
 table(log.pre, test.lbp$y)
+```
+##xgboost
+```{r}
+xgboost.model = train.xgboost(train.lbp)
+xgboost.pre = test.xgboost(xgboost.model,test.x.lbp)
+table(xgboost.pre, test.lbp$y)
 ```
 ##Majority Vote (NN, SVM, Log) + LBP
 ```{r}
+for (i in 1:length(bp.pre))
 pre=(as.numeric(as.character(bp.pre))+as.numeric(as.character(log.pre))+as.numeric(as.character(svm.pre)))
+print(pre)
 pre=ifelse(pre>=2,1,0)
-table(pre,test$y)
+table(pre,test.lbp$y)
+```
+#Some advanced models + HoG
+####关于hog的介绍
+#Train and Validate set 
+```{r}
+hogdata = data.frame(cbind(label,hog.feature[,-1]))
+colnames(hogdata)[2] = "y"
+hogdata = hogdata[,-1]
+test.hog = hogdata[test.index,]
+test.x.hog = test.hog[,-1]
+train.hog = hogdata[-test.index,]
+```
+###BPNN
+####Tune parameters:size = 1, decay = 0.01
+```{r}
+bp.model=train.bp(train.hog)
+bp.pre=test.bp(bp.model,test.x.hog)
+table(bp.pre,test.hog$y)
+```
+##Random Forest + LBP 
+####Tune Parameter: m.try=15
+```{r}
+rf.model <- train.rf(train.hog)
+rf.pre=test.rf(rf.model,test.x.hog)
+table(rf.pre,test.hog$y)
+```
+##SVM + LBP ####Tune Parameters: cost=10, gamma=0.01
+```{r}
+svm.model <- train.svm(train.hog)
+svm.pre=test.svm(svm.model,test.x.hog)
+table(svm.pre,test.hog$y)
+```
+##Logistic Regression + LBP
+```{r}
+log.model <- train.log(train.hog)
+log.pre=test.log(log.model,test.x.hog)
+table(log.pre, test.hog$y)
+```
+##xgboost
+```{r}
+xgboost.model = train.xgboost(train.hog)
+xgboost.pre = test.xgboost(xgboost.model,test.x.hog)
+table(xgboost.pre, test.hog$y)
 ```
 #Cross Validation Error Rate
 ```{r}

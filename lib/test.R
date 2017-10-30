@@ -35,7 +35,15 @@ test.svm <- function(model,test.data)
 ############ Logistic ######################
 test.log <- function(model, test_data) 
 {
-  result<- predict(model,newdata =test_data,type = 'response')
-  fitted.results <- ifelse(result>0.5,1,0)
-  return(fitted.results)
+  glm.pred<-predict(model, test_data, type = "class")
+  
+#  result<- predict(model,newdata =test_data,type = 'response')
+#  fitted.results <- ifelse(result>0.5,1,0)
+#  return(fitted.results)
+}
+##############xgboost########################
+test.xgboost = function(model,test_data){
+  testtt<-as.matrix(test_data)
+  test_pred <- predict(model, newdata = testtt[,-1])
+  return(test_pred)
 }
