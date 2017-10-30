@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "<stdin>", line 8, in <module>
+  File "D:\programming\python2.7\lib\site-packages\theano\compile\function_module.py", line 607, in __call__
+    outputs = self.fn()
+  File "D:\programming\python2.7\lib\site-packages\theano\gof\vm.py", line 326, in __call__
+    link.raise_with_op(node, thunk)
+  File "D:\programming\python2.7\lib\site-packages\theano\gof\link.py", line 297, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "D:\programming\python2.7\lib\site-packages\theano\gof\vm.py", line 322, in __call__
+    thunk()
+  File "D:\programming\python2.7\lib\site-packages\theano\gof\op.py", line 761, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "D:\programming\python2.7\lib\site-packages\theano\tensor\nnet\nnet.py", line 891, in perform
+    nll[i] = -row[y_idx[i]] + m + numpy.log(sum_j)
+IndexError: index 2 is out of bounds for axis 0 with size 2
+Apply node that caused the error: CrossentropySoftmaxArgmax1HotWithBias(Dot22.0, b, y1)
+Toposort index: 39
+Inputs types: [TensorType(float64, matrix), TensorType(float64, vector), TensorType(int64, vector)]
+Inputs shapes: [(100L, 2L), (2L,), (100L,)]
+Inputs strides: [(16L, 8L), (8L,), (8L,)]
+Inputs values: ['not shown', array([ 0.,  0.]), 'not shown']
+Outputs clients: [[Sum{acc_dtype=float64}(CrossentropySoftmaxArgmax1HotWithBias.0)], [CrossentropySoftmax1HotWithBiasDx(Assert{msg='`sm` and `dy` do not have the same shape.'}.0, CrossentropySoftmaxArgmax1HotWithBias.1, y1)], []]
+
+HINT: Re-running with most Theano optimization disabled could give you a back-trace of when this node was created. This can be done with by setting the Theano flag 'optimizer=fast_compile'. If that does not work, Theano optimizations can be disabled with 'optimizer=None'.
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
