@@ -6,25 +6,17 @@ cv.function <- function(data, K){
   n <- nrow(data)
   n.fold <- floor(n/K)
   s <- sample(rep(1:K, c(rep(n.fold, K-1), n-(K-1)*n.fold)))
-  cv.error.baseline.sift <- rep(NA, K)
-  cv.error.baseline <- rep(NA, K)
+#  cv.error.baseline.sift <- rep(NA, K)
+#  cv.error.baseline <- rep(NA, K)
   cv.error.BP <- rep(NA, K)
   cv.error.rf <- rep(NA, K)
   cv.error.svm <- rep(NA, K)
   cv.error.log <- rep(NA, K)
-  cv.error.vote <- rep(NA, K)
+  cv.error.xgboost<- rep(NA, K)
   
   for (i in 1:K){
     train.data <- data[s != i,]
     test.data <- data[s == i,]
-    
-    fit.baseline.sift <- train.baseline(train.sift)
-    pred.bs.sift<- test.baseline(fit.baseline.sift, test.x.sift)
-    cv.error.baseline.sift[i] <- mean(pred.bs.sift != test.sift$y)
-    
-    fit.baseline <- train.baseline(train.data)
-    pred.baseline <- test.baseline(fit.baseline, test.data)  
-    cv.error.baseline[i] <- mean(pred.baseline != test.data$y)
 
     fit.BP <- train.bp(train.data)
     pred.BP <- test.bp(fit.BP, test.data)  
@@ -42,13 +34,16 @@ cv.function <- function(data, K){
     pred.log <- test.log(fit.log, test.data)
     cv.error.log[i] <- mean(pred.log != test.data$y)
     
-    pre=(as.numeric(as.character(pred.BP))+as.numeric(as.character(pred.log))+as.numeric(as.character(pred.svm)))
-    pre=ifelse(pre>=2,1,0)
-    cv.error.vote[i] <- mean(pre != test.data$y)
+    fit.xgboost<-train.xgboost(train.data)
+    pred.xgboost<-test.xgboost(fit.xgboost,test.data)
+    cv.error.xgboost[i]<-mean(pred.xgboost != test.data$y)
+  
   }			
-  cv.error<- data.frame(baseline = mean(cv.error.baseline.sift),
-                        gbm = mean(cv.error.baseline) ,bp = mean(cv.error.BP), 
-                        rf = mean(cv.error.rf), svm = mean(cv.error.svm), 
-                        logistic= mean(cv.error.log),vote= mean(cv.error.vote))
+  cv.error<- data.frame(
+#        baseline = mean(cv.error.baseline.sift),
+#        gbm = mean(cv.error.baseline) ,
+        bp = mean(cv.error.BP), 
+        rf = mean(cv.error.rf), svm = mean(cv.error.svm), 
+        logistic= mean(cv.error.log),xgboost= mean(cv.error.xgboost))
   return(cv.error)
 }

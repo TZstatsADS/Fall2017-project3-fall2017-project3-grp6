@@ -43,6 +43,7 @@ lbp.feature=read.csv("../data/lbp_feature.csv", header = F)
 hog.feature = read.csv("../data/hog_feature.csv")
 label=read.csv("../data/trainlabel.csv")
 ```
+#SIFT feature
 #Train and Validate set 
 ```{r}
 sift_data=data.frame(cbind(label,sift.feature[,-1]))
@@ -131,16 +132,8 @@ table(log.pre, test.lbp$y)
 ##xgboost
 ```{r}
 xgboost.model = train.xgboost(train.lbp)
-xgboost.pre = test.xgboost(xgboost.model,test.x.lbp)
+xgboost.pre = test.xgboost(xgboost.model,test.lbp)
 table(xgboost.pre, test.lbp$y)
-```
-##Majority Vote (NN, SVM, Log) + LBP
-```{r}
-for (i in 1:length(bp.pre))
-pre=(as.numeric(as.character(bp.pre))+as.numeric(as.character(log.pre))+as.numeric(as.character(svm.pre)))
-print(pre)
-pre=ifelse(pre>=2,1,0)
-table(pre,test.lbp$y)
 ```
 #Some advanced models + HoG
 ####关于hog的介绍
@@ -174,31 +167,149 @@ svm.pre=test.svm(svm.model,test.x.hog)
 table(svm.pre,test.hog$y)
 ```
 ##Logistic Regression + LBP
+```{r, include=FALSE}
+###tune logistic regression model
+glm.fit=multinom(y~., data=training,trace = F)
+#glm=multinom(y~., data=training,maxit = 500,trace = F)
+summary(glm.fit)
+#Prediction
+glm.pred<-predict(glm.fit, testing, type = "class")
+mean(testing$y==glm.pred)  ##82%
+
+#cv
+cv.lr <- function(X.train, y.train,K){
+  n <- length(y.train)
+  n.fold <- floor(n/K)
+  s <- sample(rep(1:K, c(rep(n.fold, K-1), n-(K-1)*n.fold)))  
+  cv.accu.lr <- rep(NA, K)
+  
+  for (i in 1:K){
+    train.data <- X.train[s != i,]
+    train.label <- y.train[s != i]
+    test.data <- X.train[s == i,]
+    test.label <- y.train[s == i]
+
+    glm=multinom(train.label~., data=train.data,maxit = 500,trace = F)
+
+    #Prediction
+    pred<-predict(glm, test.data, type = "class")
+    cv.accu.lr[i] <- mean(pred == test.label)  
+    
+  }			
+  print(mean(cv.accu.lr))
+  
+}
+
+cv.lr(training[,-1],training[,1], 5)
+```
+#Final LR model
 ```{r}
 log.model <- train.log(train.hog)
 log.pre=test.log(log.model,test.x.hog)
 table(log.pre, test.hog$y)
 ```
-##xgboost
+##Xgboost
+####Tune model and choose parameters
+```{r, include=FALSE}
+trainnn<-as.matrix(training)
+testtt<-as.matrix(testing)
+dtrain=xgb.DMatrix(data=trainnn[,-1],label=trainnn[,1])
+
+#bst=xgb.train(data=dtrain,params = param,nrounds=100)
+
+#NROUNDS = c(100,300,500,1000)
+#ETA = c(0.01, 0.1, 0.2, 0.3, 0.5, 0.8)
+#MAX_DEPTH = c(6, 8, 10, 15, 20)
+NROUNDS = c(500,1000)
+ETA = c(0.3)
+MAX_DEPTH = c(3,4,5,6)
+
+cv.xgb <- function(X.train, y.train, K, NROUNDS, ETA, MAX_DEPTH){
+  for (nround in NROUNDS){
+    for (eta in ETA){
+      for (max_depth in MAX_DEPTH){
+        n <- length(y.train)
+        n.fold <- floor(n/K)
+        s <- sample(rep(1:K, c(rep(n.fold, K-1), n-(K-1)*n.fold)))  
+        cv.acc <- rep(NA, K)
+        
+        for (i in 1:K){
+          train.data <- X.train[s != i,]
+          train.label <- y.train[s != i]
+          test.data <- X.train[s == i,]
+          test.label <- y.train[s == i]
+          
+          param <- list("objective" = "multi:softmax",
+                        "eval_metric" = "mlogloss",
+                        "num_class" = 3, 'eta' = eta, 'max_depth' = max_depth)
+          
+          dtrain=xgb.DMatrix(data=train.data,label=train.label)
+          
+          bst <- xgb.train(data = dtrain,  param = param, nrounds = nround)
+          pred <- predict(bst, newdata = test.data) 
+          
+          cv.acc[i] <- mean(pred == test.label)  
+        }			
+        print(paste("------Mean 5-fold cv accuracy for nround=",nround,",eta=",eta,",max_depth=",max_depth,
+                    "------",mean(cv.acc)))
+        key = c(nround,eta,max_depth)
+        CV_ERRORS[key] = mean(cv.acc)
+      
+      }
+    }
+  }
+}
+
+CV_ERRORS = list()
+cv.xgb(trainnn[,-1], trainnn[,1], 5, NROUNDS, ETA, MAX_DEPTH)
+```
+##Final xgboost model
 ```{r}
 xgboost.model = train.xgboost(train.hog)
-xgboost.pre = test.xgboost(xgboost.model,test.x.hog)
+xgboost.pre = test.xgboost(xgboost.model,test.hog)
 table(xgboost.pre, test.hog$y)
 ```
 #Cross Validation Error Rate
 ```{r}
 source("../lib/cross_validation.R")
-cv.error=cv.function(train, 5)
+cv.error.lbp =cv.function(lbpdata,5)
+cv.error.hog = cv.function(hogdata,5)
+print (cv.error.lbp)
+print(cv.error.hog)
+write.csv(cv.error.lbp,"cv.error.lbp.csv")
+write.csv(cv.error.hog,"cv.error.hog.csv")
+```
 #Final Train & Time
+```{r}
+#a=system.time(baseline <- train.baseline(sift_data))
+#b=system.time(gbm <- train.baseline(lbpdata))
+c=system.time(bp <- train.bp(lbpdata))
+d=system.time(rf <- train.rf(lbpdata))
+e=system.time(svm <- train.svm(lbpdata))
+f=system.time(logistic <- train.log(lbpdata))
+g = system.time(xgboost <- train.xgboost(lbpdata))
+time=list(bp=c,rf=d,svm=e,logistic=f,xgboost = g)
 
-a=system.time(baseline <- train.baseline(all))
-b=system.time(gbm <- train.baseline(new.data))
-c=system.time(bp <- train.bp(new.data))
-d=system.time(rf <- train.rf(new.data))
-e=system.time(svm <- train.svm(new.data))
-f=system.time(logistic <- train.log(new.data))
-time=list(baseline=a,gbm=b,bp=c,rf=d,svm=e,logistic=f,vote=NA)
-cv.error
-time
-#Final Model ####We choose Majority Vote as our final model. Since training time of each model is very short, time won't be a problem for majority vote. Although we sacrifice little accuracy, We can get a more robust model.
+#$bp
+#   user  system elapsed 
+#  0.594   0.006   0.604 
 
+#$rf
+#   user  system elapsed 
+# 84.416   0.520  85.249 
+
+#$svm
+#   user  system elapsed 
+#  3.475   0.030   3.514 
+
+#$logistic
+#   user  system elapsed 
+#  0.482   0.008   0.491 
+
+#$xgboost
+#   user  system elapsed 
+#119.682   0.897  32.342 
+```
+#Final Model ####
+SVM+LBP
+XGBOOST+HOG
