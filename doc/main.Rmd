@@ -1,0 +1,350 @@
+---
+title: "Project 3 - Dogs, Fried Chicken or Blueberry Muffins?"
+author: "Group6: Sijian Xuan, Xinyao Guo, Siyi Wang, Xiaoyu Zhou, Pinren Chen"
+date: "Oct 10, 2017"
+output:
+  html_document: default
+  pdf_document: 
+    latex_engine: xelatex
+---
+#Install necessary packages.
+```{r, include=FALSE}
+if(!require("EBImage")){
+  source("https://bioconductor.org/biocLite.R")
+  biocLite("EBImage")
+}
+
+packages.used=c("gbm", "caret","DMwR" ,"nnet","randomForest","e1071","data.table","readr","xgboost")
+packages.needed=setdiff(packages.used, 
+                        intersect(installed.packages()[,1], 
+                                  packages.used))
+if(length(packages.needed)>0){
+  install.packages(packages.needed, dependencies = TRUE)
+}
+
+library("EBImage")
+library("gbm")
+library("caret")
+library("DMwR")
+library("nnet")
+library("randomForest")
+library("e1071")
+library("data.table")
+library("xgboost")
+library("readr")
+```
+#Set the working directory to the image folder.
+```{r, include = FALSE, eval = FALSE}
+setwd("/Users/sijianxuan/Documents/Github/Fall2017-project3-fall2017-project3-grp6/doc") 
+# here replace it with your own path or manually set it in RStudio to where this rmd file is located.
+```
+#Read Data
+```{r,warning=F,message=F}
+sift.feature=read.csv("../data/sift_feature.csv", header = T)
+lbp.feature=read.csv("../data/lbp_feature.csv", header = F)
+hog.feature = read.csv("../data/hog_feature.csv")
+label=read.csv("../data/trainlabel.csv")
+```
+#SIFT feature
+####Make dataset
+```{r}
+sift_data=data.frame(cbind(label,sift.feature[,-1]))
+test.index=sample(1:3000,500,replace=F)
+colnames(sift_data)[2]="y"
+sift_data = sift_data[,-1]
+test.sift=sift_data[test.index,]
+test.x.sift=test.sift[,-1]
+train.sift=sift_data[-test.index,]
+```
+#Baseline model: GBM + SIFT
+####Tune parameters:n.trees = 250, shrinkage = 0.1
+```{r, eval=FALSE}
+y<-label[,2]
+X<-test.x.sift
+source("../lib/tune gbm.r")
+#These lines of code takes a long like crazy time so I just wrote the results as a csv file,and we read it in here for the results.
+for(k in 1:length(depths)){
+  cat("k=", k, "\n")
+  err_cv[k,] <- cv.function(X, y, depths[k], shrinkage=shrinkages, K=5)  #K=5
+}
+colnames(err_cv) = c("mean of cv.error","sd of cv.error")
+rownames(err_cv) = c("depth = 3", "depth = 5", "depth = 7", "depth = 9","depth = 11")
+print(err_cv)
+write.csv(err_cv,file = "../output/err_cv_for_baseline.csv")
+```
+```{r}
+err_cv_for_baseline = read.csv("../output/err_cv_for_baseline.csv")
+print(err_cv_for_baseline)
+```
+#Other models + SIFT
+####The 5000-dimensional SIFT feature takes a long time to get the results. If PCA is used to do dimension reduction, the accuracy become really low. It makes sense because doing PCA dimension reduction means losing information. As we are pursuing higher accuracy and shorter time at the same time, we started to use other feature extraction methods. With Zhilin's suggestion, we use Local Binary Patterns(LBP), Histogram of oriented gradients(HoG) and Convolutional Neural Network(CNN) to extract features.
+
+#Local Binary Patterns(LBP)
+####Local Binary Pattern (LBP) is a simple yet very efficient texture operator which labels the pixels of an image by thresholding the neighborhood of each pixel and considers the result as a binary number. Due to its discriminative power and computational simplicity, LBP texture operator has become a popular approach in various applications. It can be seen as a unifying approach to the traditionally divergent statistical and structural models of texture analysis. Perhaps the most important property of the LBP operator in real-world applications is its robustness to monotonic gray-scale changes caused, for example, by illumination variations. Another important property is its computational simplicity, which makes it possible to analyze images in challenging real-time settings.
+####A useful extension to the original operator is the so-called uniform pattern, which can be used to reduce the length of the feature vector and implement a simple rotation invariant descriptor. This idea is motivated by the fact that some binary patterns occur more commonly in texture images than others. A local binary pattern is called uniform if the binary pattern contains at most two 0-1 or 1-0 transitions. For example, 00010000(2 transitions) is a uniform pattern, 01010100(6 transitions) is not. In the computation of the LBP histogram, the histogram has a separate bin for every uniform pattern, and all non-uniform patterns are assigned to a single bin. Using uniform patterns, the length of the feature vector for a single cell reduces from 256 to 59. The 58 uniform binary patterns correspond to the integers 0, 1, 2, 3, 4, 6, 7, 8, 12, 14, 15, 16, 24, 28, 30, 31, 32, 48, 56, 60, 62, 63, 64, 96, 112, 120, 124, 126, 127, 128, 129, 131, 135, 143, 159, 191, 192, 193, 195, 199, 207, 223, 224, 225, 227, 231, 239, 240, 241, 243, 247, 248, 249, 251, 252, 253, 254 and 255.
+####We used MATLAB to extract LBP features(adapted codes from Zhilin's work, I added a filter for color image and grayscale image). The column dimension is 59, which is much less than 5000. So it is reasonable that we expect a decreased time usage.
+####Make LBP dataset
+```{r}
+source("../lib/train.r")
+source("../lib/test.r")
+
+lbpdata = data.frame(cbind(label,lbp.feature))
+colnames(lbpdata)[2] = "y"
+lbpdata = lbpdata[,-1]
+test.lbp = lbpdata[test.index,]
+test.x.lbp = test.lbp[,-1]
+train.lbp = lbpdata[-test.index,]
+```
+#GBM + LBP
+```{r,eval=FALSE}
+#These lines also take long time to run so I just run it once and save it into a csv file and read it to save time.
+X = train.lbp[,-1]
+y = train.lbp[,1]
+for(k in 1:length(depths)){
+  cat("k=", k, "\n")
+  err_cv[k,] <- cv.function(X, y, depths[k], shrinkage=shrinkages, K=5)  #K=5
+}
+colnames(err_cv) = c("mean of cv.error","sd of cv.error")
+rownames(err_cv) = c("depth = 3", "depth = 5", "depth = 7", "depth = 9","depth = 11")
+print(err_cv)
+write.csv(err_cv,file = "../output/err_cv_for_GBM+LBP.csv")
+```
+```{r}
+err_cv_for_GBM_LBP = read.csv("../output/err_cv_for_GBM+LBP.csv")
+print(err_cv_for_GBM_LBP)
+```
+#Some advanced models + LBP
+##BPNN
+####Tune parameters:size = 1, decay = 0.01
+```{r}
+bp.model=train.bp(train.lbp)
+bp.pre=test.bp(bp.model,test.x.lbp)
+table(bp.pre,test.lbp$y)
+```
+##Random Forest + LBP 
+####Tune Parameter: m.try=15
+```{r, message=FALSE}
+rf.model <- train.rf(train.lbp)
+rf.pre=test.rf(rf.model,test.x.lbp)
+table(rf.pre,test.lbp$y)
+```
+##SVM + LBP 
+####Tune Parameters: cost=10, gamma=0.01
+```{r}
+svm.model <- train.svm(train.lbp)
+svm.pre=test.svm(svm.model,test.x.lbp)
+table(svm.pre,test.lbp$y)
+```
+##Logistic Regression + LBP
+```{r}
+log.model <- train.log(train.lbp)
+log.pre=test.log(log.model,test.x.lbp)
+table(log.pre, test.lbp$y)
+```
+##xgboost
+```{r}
+xgboost.model = train.xgboost(train.lbp)
+xgboost.pre = test.xgboost(xgboost.model,test.lbp)
+table(xgboost.pre, test.lbp$y)
+```
+#Histograms of Orientation Gradients
+###Algorithm Overview
+####Local shape information often well described by the distribution of intensity gradients or edge directions even without precise information about the location of the edges themselves. 
+####Divide image into small sub-images: “cells” Cells can be rectangular (R-HOG) or circular (C-HOG) 
+####Accumulate a histogram of edge orientations within that cell 
+####The combined histogram entries are used as the feature vector describing the object 
+####To provide better illumination invariance (lighting, shadows, etc.) normalize the cells across larger regions incorporating multiple cells: “blocks” 
+###Why HOG? 
+####Capture edge or gradient structure that is very characteristic of local shape 
+####Relatively invariant to local geometric and photometric transformations 
+#####Within cell rotations and translations do not affect the HOG values 
+#####Illumination invariance achieved through normalization 
+####The spatial and orientation sampling densities can be tuned for different applications 
+#####For human detection (Dalal and Triggs) coarse spatial sampling and fine orientation sampling works best 
+#####For hand gesture recognition (Fernandez-Llorca and Lacey) finer spatial sampling and orientation sampling is required 
+
+#Some advanced models + HoG
+##Note we are not using GBM anymore because it takes so long time to run. We know at this point that we only have half an hour to run our code and get the result in class. As a result we stop using GBM anymore. 
+###GBM, see you in the future.
+####Make HoG dataset
+```{r}
+hogdata = data.frame(cbind(label,hog.feature[,-1]))
+colnames(hogdata)[2] = "y"
+hogdata = hogdata[,-1]
+test.hog = hogdata[test.index,]
+test.x.hog = test.hog[,-1]
+train.hog = hogdata[-test.index,]
+```
+##BPNN + HoG
+####Tune parameters:size = 1, decay = 0.01
+```{r}
+bp.model=train.bp(train.hog)
+bp.pre=test.bp(bp.model,test.x.hog)
+table(bp.pre,test.hog$y)
+```
+##Random Forest + HoG 
+####Tune Parameter: m.try=15
+```{r, message=FALSE}
+rf.model <- train.rf(train.hog)
+rf.pre=test.rf(rf.model,test.x.hog)
+table(rf.pre,test.hog$y)
+```
+##SVM + HoG 
+####Tune Parameters: cost=10, gamma=0.01
+```{r}
+svm.model <- train.svm(train.hog)
+svm.pre=test.svm(svm.model,test.x.hog)
+table(svm.pre,test.hog$y)
+```
+##Logistic Regression + HoG
+####Tune logistic regression model：tuning result is using the default interation 100, we tried 500 but accuracy is getting worse.
+##Final LR model
+```{r}
+log.model <- train.log(train.hog)
+log.pre=test.log(log.model,test.x.hog)
+table(log.pre, test.hog$y)
+```
+##Xgboost
+####Tune model and choose parameters
+```{r,eval=FALSE}
+#These lines also take long time to run; we print the result instead of running it every time.
+trainnn<-as.matrix(train.hog)
+testtt<-as.matrix(test.hog)
+dtrain=xgb.DMatrix(data=trainnn[,-1],label=trainnn[,1])
+
+NROUNDS = c(500,1000)
+ETA = c(0.3)
+MAX_DEPTH = c(3,4,5,6)
+
+cv.xgb <- function(X.train, y.train, K, NROUNDS, ETA, MAX_DEPTH){
+  for (nround in NROUNDS){
+    for (eta in ETA){
+      for (max_depth in MAX_DEPTH){
+        n <- length(y.train)
+        n.fold <- floor(n/K)
+        s <- sample(rep(1:K, c(rep(n.fold, K-1), n-(K-1)*n.fold)))  
+        cv.acc <- rep(NA, K)
+        
+        for (i in 1:K){
+          train.data <- X.train[s != i,]
+          train.label <- y.train[s != i]
+          test.data <- X.train[s == i,]
+          test.label <- y.train[s == i]
+          
+          param <- list("objective" = "multi:softmax",
+                        "eval_metric" = "mlogloss",
+                        "num_class" = 3, 'eta' = eta, 'max_depth' = max_depth)
+          
+          dtrain=xgb.DMatrix(data=train.data,label=train.label)
+          
+          bst <- xgb.train(data = dtrain,  param = param, nrounds = nround)
+          pred <- predict(bst, newdata = test.data) 
+          
+          cv.acc[i] <- mean(pred == test.label)  
+        }			
+        print(paste("------Mean 5-fold cv accuracy for nround=",nround,",eta=",eta,",max_depth=",max_depth,
+                    "------",mean(cv.acc)))
+        key = c(nround,eta,max_depth)
+        CV_ERRORS[key] = mean(cv.acc)
+      
+      }
+    }
+  }
+}
+
+CV_ERRORS = list()
+cv.xgb(trainnn[,-1], trainnn[,1], 5, NROUNDS, ETA, MAX_DEPTH)
+#Results
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 3 ------ 0.8044"
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 4 ------ 0.7836"
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 5 ------ 0.8"
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 6 ------ 0.7936"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 3 ------ 0.7928"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 4 ------ 0.7984"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 5 ------ 0.796"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 6 ------ 0.7952"
+```
+##Final xgboost model
+```{r}
+xgboost.model = train.xgboost(train.hog)
+xgboost.pre = test.xgboost(xgboost.model,test.hog)
+table(xgboost.pre, test.hog$y)
+```
+#Cross Validation Error Rate
+```{r,eval=FALSE}
+#These lines also take long time to run so I just run it once and save it into a csv file and read it to save time.
+source("../lib/cross_validation.R")
+cv.error.lbp =cv.function(lbpdata,5)
+cv.error.hog = cv.function(hogdata,5)
+print (cv.error.lbp)
+print(cv.error.hog)
+write.csv(cv.error.lbp,"../output/cv.error.lbp.csv")
+write.csv(cv.error.hog,"../output/cv.error.hog.csv")
+```
+```{r}
+cv.error.lbp = read.csv("../output/cv.error.lbp.csv")
+cv.error.hog = read.csv("../output/cv.error.hog.csv")
+print(cv.error.lbp)
+print(cv.error.hog)
+```
+#Final Train & Time
+```{r, eval=FALSE}
+#a=system.time(baseline <- train.baseline(sift_data))
+#b=system.time(gbm <- train.baseline(lbpdata))
+c=system.time(bp <- train.bp(lbpdata))
+d=system.time(rf <- train.rf(lbpdata))
+e=system.time(svm <- train.svm(lbpdata))
+f=system.time(logistic <- train.log(lbpdata))
+g = system.time(xgboost <- train.xgboost(lbpdata))
+time_lbp=list(bp=c,rf=d,svm=e,logistic=f,xgboost = g)
+
+c=system.time(bp <- train.bp(hogdata))
+d=system.time(rf <- train.rf(hogdata))
+e=system.time(svm <- train.svm(hogdata))
+f=system.time(logistic <- train.log(hogdata))
+g = system.time(xgboost <- train.xgboost(hogdata))
+time_hog=list(bp=c,rf=d,svm=e,logistic=f,xgboost = g)
+
+print(time_lbp)
+#$bp
+#   user  system elapsed 
+#  0.383   0.002   0.384 
+
+#$rf
+#   user  system elapsed 
+# 59.177   0.151  59.439 
+
+#$svm
+#   user  system elapsed 
+#  1.752   0.007   1.760 
+
+#$logistic
+#   user  system elapsed 
+#  0.304   0.003   0.307 
+
+#$xgboost
+#   user  system elapsed 
+# 28.457   0.061  28.636 
+print(time_hog)
+#$bp
+#   user  system elapsed 
+#  0.266   0.001   0.266 
+
+#$rf
+#   user  system elapsed 
+# 49.142   0.172  49.444 
+
+#$svm
+#   user  system elapsed 
+#  1.518   0.010   1.528 
+
+#$logistic
+#   user  system elapsed 
+#  0.271   0.003   0.274 
+
+#$xgboost
+#   user  system elapsed 
+# 22.785   0.079  22.976 
+```
+#Final Model
+#### We choose SVM + LBP and xgboost + HoG as our final mdoel. They both have high accuracy as well as short time usage.

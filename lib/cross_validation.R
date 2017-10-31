@@ -6,8 +6,6 @@ cv.function <- function(data, K){
   n <- nrow(data)
   n.fold <- floor(n/K)
   s <- sample(rep(1:K, c(rep(n.fold, K-1), n-(K-1)*n.fold)))
-#  cv.error.baseline.sift <- rep(NA, K)
-#  cv.error.baseline <- rep(NA, K)
   cv.error.BP <- rep(NA, K)
   cv.error.rf <- rep(NA, K)
   cv.error.svm <- rep(NA, K)
@@ -40,8 +38,6 @@ cv.function <- function(data, K){
   
   }			
   cv.error<- data.frame(
-#        baseline = mean(cv.error.baseline.sift),
-#        gbm = mean(cv.error.baseline) ,
         bp = mean(cv.error.BP), 
         rf = mean(cv.error.rf), svm = mean(cv.error.svm), 
         logistic= mean(cv.error.log),xgboost= mean(cv.error.xgboost))
