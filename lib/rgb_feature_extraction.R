@@ -1,4 +1,5 @@
 #############RGB
+############# We are actually not using this method finally, however I keep it to show the work.
 library("EBImage")
 
 extract_rgb_feature <- function(img){

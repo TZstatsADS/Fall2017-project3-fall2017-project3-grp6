@@ -11,10 +11,11 @@ Below is an example. If no contribution statement is provided, we will insert a 
 ---
 Sample project README statement.
 
-Project xxx
+Project 3
 
-Team members: Avi Bond, Comma Deed, En Funn, Gem Hon
+Team members: Sijian Xuan, Xinyao Guo, Siyi Wang, Pinren Chen, Xiaoyu Zhou
 
-Summary: In this project, we developed a new method and improved the classification accuracy for images of cats and dogs to 99.9%
+Summary: In this project, we used several feature extraction such as LBP feature extraction, HoG feature extraction methods and classification models from machine learning to recogonize whether there is a dog, chicken or blueberry muffin in the image. We have a baseline model which is GBM + SIFT and we are trying to develop a way that improve the baseline model most. We also tried RGB for feature extraction and CNN for both feature extraction and classification. However, there are grayscale images that RGB could not deal with; and CNN takes a long time to train the model. We finally use SVM + LBP and xgboost + HoG as our winners. They achieve a accracy rate of about 80% and takes a short time to train (less than 1 minute).
 
-[Contribution Statement] AB, CD, EF and GH designed the study. AB and CD developed baseline classification model for evaluation. EF and GH explored feature engineering for improving the baseline model. AB, EF and GH discussed and designed the model evaluation protocol. CD carried out the computation for model evaluation. All team members contributed to the GitHub repository and prepared the presentation. All team members approve our work presented in our GitHub repository including this contribution statement.
+[Contribution Statement]
+Sijian, as the group presenter, is working on the whole organization of the study. He does the research about LBP feature extraction method and choose BPNN, SVM, Random Forest, Logistic regression as well as writing the relevant code with help of Siyi Wang and Xinyao Guo. He collects everyone's code and write them in main.Rmd and write the ppt file.

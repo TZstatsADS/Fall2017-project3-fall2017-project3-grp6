@@ -1,4 +1,4 @@
-%%You gonna put folder 'images' in root directory
+%%You gonna put folder 'images' in root directory and put this file in root directory to run it. You can also set the working directory by your convenience.
 function lbpfeature()
 conf.calDir = './' ; % calculating directory
 conf.dataDir = './images/' ; % data (image) directory 

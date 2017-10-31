@@ -3,9 +3,9 @@ title: "Project 3 - Dogs, Fried Chicken or Blueberry Muffins?"
 author: "Group6: Sijian Xuan, Xinyao Guo, Siyi Wang, Xiaoyu Zhou, Pinren Chen"
 date: "Oct 10, 2017"
 output:
-  html_document: default
   pdf_document: 
     latex_engine: xelatex
+  html_document: default
 ---
 #Install necessary packages.
 ```{r, include=FALSE}
@@ -82,7 +82,7 @@ print(err_cv_for_baseline)
 #Local Binary Patterns(LBP)
 ####Local Binary Pattern (LBP) is a simple yet very efficient texture operator which labels the pixels of an image by thresholding the neighborhood of each pixel and considers the result as a binary number. Due to its discriminative power and computational simplicity, LBP texture operator has become a popular approach in various applications. It can be seen as a unifying approach to the traditionally divergent statistical and structural models of texture analysis. Perhaps the most important property of the LBP operator in real-world applications is its robustness to monotonic gray-scale changes caused, for example, by illumination variations. Another important property is its computational simplicity, which makes it possible to analyze images in challenging real-time settings.
 ####A useful extension to the original operator is the so-called uniform pattern, which can be used to reduce the length of the feature vector and implement a simple rotation invariant descriptor. This idea is motivated by the fact that some binary patterns occur more commonly in texture images than others. A local binary pattern is called uniform if the binary pattern contains at most two 0-1 or 1-0 transitions. For example, 00010000(2 transitions) is a uniform pattern, 01010100(6 transitions) is not. In the computation of the LBP histogram, the histogram has a separate bin for every uniform pattern, and all non-uniform patterns are assigned to a single bin. Using uniform patterns, the length of the feature vector for a single cell reduces from 256 to 59. The 58 uniform binary patterns correspond to the integers 0, 1, 2, 3, 4, 6, 7, 8, 12, 14, 15, 16, 24, 28, 30, 31, 32, 48, 56, 60, 62, 63, 64, 96, 112, 120, 124, 126, 127, 128, 129, 131, 135, 143, 159, 191, 192, 193, 195, 199, 207, 223, 224, 225, 227, 231, 239, 240, 241, 243, 247, 248, 249, 251, 252, 253, 254 and 255.
-####We used MATLAB to extract LBP features(adapted codes from Zhilin's work, I added a filter for color image and grayscale image). The column dimension is 59, which is much less than 5000. So it is reasonable that we expect a decreased time usage.
+####We used MATLAB to extract LBP features(adapted codes from Zhilin's work, I added a filter for color image and grayscale image). The column dimension is 59, which is much less than 5000. So it is reasonable that we expect a decreased time usage. The time use is 569.281s.
 ####Make LBP dataset
 ```{r}
 source("../lib/train.r")
@@ -157,15 +157,17 @@ table(xgboost.pre, test.lbp$y)
 ###Why HOG? 
 ####Capture edge or gradient structure that is very characteristic of local shape 
 ####Relatively invariant to local geometric and photometric transformations 
-#####Within cell rotations and translations do not affect the HOG values 
-#####Illumination invariance achieved through normalization 
+######Within cell rotations and translations do not affect the HOG values 
+######Illumination invariance achieved through normalization 
 ####The spatial and orientation sampling densities can be tuned for different applications 
-#####For human detection (Dalal and Triggs) coarse spatial sampling and fine orientation sampling works best 
-#####For hand gesture recognition (Fernandez-Llorca and Lacey) finer spatial sampling and orientation sampling is required 
+######For human detection (Dalal and Triggs) coarse spatial sampling and fine orientation sampling works best 
+######For hand gesture recognition (Fernandez-Llorca and Lacey) finer spatial sampling and orientation sampling is required 
+
+####We extracted HoG feature using R, it can be found in "./lib/hog_feature_extraction.r".
 
 #Some advanced models + HoG
-##Note we are not using GBM anymore because it takes so long time to run. We know at this point that we only have half an hour to run our code and get the result in class. As a result we stop using GBM anymore. 
-###GBM, see you in the future.
+##Note we are not using GBM anymore because it takes so long time to run.
+###GBM, wish you well in the future.
 ####Make HoG dataset
 ```{r}
 hogdata = data.frame(cbind(label,hog.feature[,-1]))
@@ -198,7 +200,7 @@ table(svm.pre,test.hog$y)
 ```
 ##Logistic Regression + HoG
 ####Tune logistic regression model：tuning result is using the default interation 100, we tried 500 but accuracy is getting worse.
-##Final LR model
+##LR model
 ```{r}
 log.model <- train.log(train.hog)
 log.pre=test.log(log.model,test.x.hog)
@@ -289,8 +291,6 @@ print(cv.error.hog)
 ```
 #Final Train & Time
 ```{r, eval=FALSE}
-#a=system.time(baseline <- train.baseline(sift_data))
-#b=system.time(gbm <- train.baseline(lbpdata))
 c=system.time(bp <- train.bp(lbpdata))
 d=system.time(rf <- train.rf(lbpdata))
 e=system.time(svm <- train.svm(lbpdata))

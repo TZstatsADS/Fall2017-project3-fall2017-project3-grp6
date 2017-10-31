@@ -1,7 +1,5 @@
 '''
 Created on Oct 28, 2017
-
-@author: zjutc
 '''
 
 from theano import tensor as T
