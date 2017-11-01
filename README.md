@@ -23,7 +23,7 @@ Xinyao Guo: tried HoG and RGB to do feature extraction and finally chose HoG. Ap
 
 Xiyi Wang:
 
-Pinren Chen:
+Pinren Chen: Responsible for CNN model analysis. Conducted CNN in python for both feature extraction and classification. Debuged and improved model with Xiaoyu. Saved the model and used it for prediction.
 
 Xiaoyu Zhou: was responsible for CNN model analysis. Conducted CNN in R for both feature extraction and classification, decreased the baseline error rate successfully but discarded R-version due to the time spend. Collaborated with Pinren to write code and debug in Python for CNN feature extraction and classification, and achieved the accuracy rate >90%. Accelerated the Python running time.
 
