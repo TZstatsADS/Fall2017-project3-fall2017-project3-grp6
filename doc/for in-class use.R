@@ -4,7 +4,7 @@ if(!require("EBImage")){
   biocLite("EBImage")
 }
 
-packages.used=c("EBImage","gbm", "caret","DMwR" ,"nnet","randomForest","e1071","data.table","readr","xgboost")
+packages.used=c("gbm", "caret","DMwR" ,"nnet","randomForest","e1071","data.table","readr","xgboost")
 packages.needed=setdiff(packages.used, 
                         intersect(installed.packages()[,1], 
                                   packages.used))
