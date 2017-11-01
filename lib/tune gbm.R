@@ -11,7 +11,7 @@ train<-function(X, y, depth, shrinkage){
   best_iter <- gbm.perf(fit_gbm, method="OOB", plot.it = FALSE)
   return(list(fit=fit_gbm, iter=best_iter))
 }
-
+###############
 test = function(fit_train, dat_test){
   pred<- predict(fit_train$fit, newdata = dat_test, 
                              n.trees = fit_train$iter, 
@@ -21,7 +21,7 @@ test = function(fit_train, dat_test){
   return(apply(pred,1,which.max)-1)
 }
 
-
+#######################
 cv.function<-function(X, y, depth, shrinkage, K=3){
   n = length(y)
   n.fold = floor(n/K)
