@@ -1,30 +1,21 @@
 ### Import matrix of features X and create vector of labels y
-#####read in SIFT feature and labels
-features <- read.csv(‘~/Desktop/Data Science/project3/training_set/sift_train.csv’)
-dim(features)
-label_train<-read.csv(‘~/Desktop/Data Science/project3/training_set/label_train.csv’)
-dim(label_train)
-y<-label_train[,2]
-X<-features[,-1]
 
 train<-function(X, y, depth, shrinkage){
-  library(‘gbm’)
   fit_gbm = gbm.fit(X, y,
-                    distribution = “multinomial”,
+                    distribution = "multinomial",
                     n.trees = 10,
                     interaction.depth = depth, 
                     shrinkage = shrinkage,
                     bag.fraction = 0.5,
                     verbose=FALSE)
-  best_iter <- gbm.perf(fit_gbm, method=“OOB”, plot.it = FALSE)
+  best_iter <- gbm.perf(fit_gbm, method="OOB", plot.it = FALSE)
   return(list(fit=fit_gbm, iter=best_iter))
 }
 
 test = function(fit_train, dat_test){
-  library(“gbm”)
   pred<- predict(fit_train$fit, newdata = dat_test, 
                              n.trees = fit_train$iter, 
-                             type=“response”)
+                             type="response")
   pred<-data.frame(pred)
   colnames(pred)<-c(0,1,2)
   return(apply(pred,1,which.max)-1)
@@ -59,7 +50,7 @@ shrinkages = 0.1
 err_cv = array(dim=c(length(depths),2))
 
 for(k in 1:length(depths)){
-  cat(“k=“, k, “\n”)
+  cat("k=", k, "\n")
   err_cv[k,] <- cv.function(X, y, depths[k], shrinkage=shrinkages, K=5)  #K=5
 }
 

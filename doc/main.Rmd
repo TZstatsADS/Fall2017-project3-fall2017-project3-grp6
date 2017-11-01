@@ -59,17 +59,17 @@ train.sift=sift_data[-test.index,]
 #Baseline model: GBM + SIFT
 ####Tune parameters:n.trees = 250, shrinkage = 0.1
 ```{r, eval=FALSE}
-y<-label[,2]
-X<-test.x.sift
+#training time is kind of long so I write it in csv and
+#read it for faster in knit process
+features <- train.sift
+dim(features)
+label_train<-train.sift
+dim(label_train)
+y<-label_train[,1]
+X<-features[,-1]
 source("../lib/tune gbm.r")
-#These lines of code takes a long like crazy time so I just wrote the results as a csv file,and we read it in here for the results.
-for(k in 1:length(depths)){
-  cat("k=", k, "\n")
-  err_cv[k,] <- cv.function(X, y, depths[k], shrinkage=shrinkages, K=5)  #K=5
-}
 colnames(err_cv) = c("mean of cv.error","sd of cv.error")
 rownames(err_cv) = c("depth = 3", "depth = 5", "depth = 7", "depth = 9","depth = 11")
-print(err_cv)
 write.csv(err_cv,file = "../output/err_cv_for_baseline.csv")
 ```
 ```{r}
@@ -95,55 +95,55 @@ test.lbp = lbpdata[test.index,]
 test.x.lbp = test.lbp[,-1]
 train.lbp = lbpdata[-test.index,]
 ```
+```{r,include=FALSE,eval=FALSE}
 #GBM + LBP
-```{r,eval=FALSE}
+####(These lines of code are commented since it is not the best model, They appear to show the work.)
 #These lines also take long time to run so I just run it once and save it into a csv file and read it to save time.
-X = train.lbp[,-1]
-y = train.lbp[,1]
-for(k in 1:length(depths)){
-  cat("k=", k, "\n")
-  err_cv[k,] <- cv.function(X, y, depths[k], shrinkage=shrinkages, K=5)  #K=5
-}
+features <- train.lbp
+label_train<-train.lbp
+y<-label_train[,1]
+X<-features[,-1]
+source("../lib/tune gbm.r")
 colnames(err_cv) = c("mean of cv.error","sd of cv.error")
 rownames(err_cv) = c("depth = 3", "depth = 5", "depth = 7", "depth = 9","depth = 11")
 print(err_cv)
 write.csv(err_cv,file = "../output/err_cv_for_GBM+LBP.csv")
 ```
-```{r}
+```{r,include=FALSE,eval=FALSE}
 err_cv_for_GBM_LBP = read.csv("../output/err_cv_for_GBM+LBP.csv")
 print(err_cv_for_GBM_LBP)
 ```
+```{r,include=FALSE,eval=FALSE}
 #Some advanced models + LBP
-##BPNN
+##BPNN (not the best one, just appear to show work)
 ####Tune parameters:size = 1, decay = 0.01
-```{r}
 bp.model=train.bp(train.lbp)
 bp.pre=test.bp(bp.model,test.x.lbp)
 table(bp.pre,test.lbp$y)
 ```
-##Random Forest + LBP 
+```{r,include=FALSE,eval=FALSE}
+##Random Forest + LBP (not the best one, just appear to show work)
 ####Tune Parameter: m.try=15
-```{r, message=FALSE}
 rf.model <- train.rf(train.lbp)
 rf.pre=test.rf(rf.model,test.x.lbp)
 table(rf.pre,test.lbp$y)
 ```
-##SVM + LBP 
+##SVM + LBP (Best one candidate)
 ####Tune Parameters: cost=10, gamma=0.01
 ```{r}
 svm.model <- train.svm(train.lbp)
 svm.pre=test.svm(svm.model,test.x.lbp)
 table(svm.pre,test.lbp$y)
 ```
-##Logistic Regression + LBP
-```{r}
+```{r,include=FALSE,eval=FALSE}
+##Logistic Regression + LBP (not the best one, just appear to show work)
 log.model <- train.log(train.lbp)
 log.pre=test.log(log.model,test.x.lbp)
 table(log.pre, test.lbp$y)
 ```
-##Xgboost
+```{r,,include=FALSE,eval=FALSE}
+##Xgboost(not the best one, just appear to show work)
 ####Tune model and choose parameters
-```{r,eval=FALSE}
 #These lines also take long time to run; we print the result instead of running it every time.
 trainnn<-as.matrix(train.hog)
 testtt<-as.matrix(test.hog)
@@ -201,8 +201,8 @@ cv.xgb(trainnn[,-1], trainnn[,1], 5, NROUNDS, ETA, MAX_DEPTH)
 #[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 5 ------ 0.796"
 #[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 6 ------ 0.7952"
 ```
-####Tuned xgboost model
-```{r}
+```{r,include=FALSE, eval=FALSE}
+#####Tuned xgboost model
 xgboost.model = train.xgboost(train.lbp)
 xgboost.pre = test.xgboost(xgboost.model,test.lbp)
 table(xgboost.pre, test.lbp$y)
@@ -227,7 +227,7 @@ table(xgboost.pre, test.lbp$y)
 
 #Some advanced models + HoG
 ##Note we are not using GBM anymore because it takes so long time to run.
-###GBM, wish you well in the future.
+
 ####Make HoG dataset
 ```{r}
 hogdata = data.frame(cbind(label,hog.feature[,-1]))
@@ -237,36 +237,36 @@ test.hog = hogdata[test.index,]
 test.x.hog = test.hog[,-1]
 train.hog = hogdata[-test.index,]
 ```
-##BPNN + HoG
+```{r, include=FALSE, eval=FALSE}
+##BPNN + HoG(not the best one, just appear to show work)
 ####Tune parameters:size = 1, decay = 0.01
-```{r}
 bp.model=train.bp(train.hog)
 bp.pre=test.bp(bp.model,test.x.hog)
 table(bp.pre,test.hog$y)
 ```
-##Random Forest + HoG 
+```{r, include=FALSE, eval=FALSE}
+##Random Forest + HoG(not the best one, just appear to show work)
 ####Tune Parameter: m.try=15
-```{r, message=FALSE}
 rf.model <- train.rf(train.hog)
 rf.pre=test.rf(rf.model,test.x.hog)
 table(rf.pre,test.hog$y)
 ```
-##SVM + HoG 
+```{r,include=FALSE, eval=FALSE}
+##SVM + HoG (not the best one, just appear to show work)
 ####Tune Parameters: cost=10, gamma=0.01
-```{r}
 svm.model <- train.svm(train.hog)
 svm.pre=test.svm(svm.model,test.x.hog)
 table(svm.pre,test.hog$y)
 ```
-##Logistic Regression + HoG
+```{r,include=FALSE, eval=FALSE}
+##Logistic Regression + HoG(not the best one, just appear to show work)
 ####Tune logistic regression model：tuning result is using the default interation 100, we tried 500 but accuracy is getting worse.
 ##LR model
-```{r}
 log.model <- train.log(train.hog)
 log.pre=test.log(log.model,test.x.hog)
 table(log.pre, test.hog$y)
 ```
-##Xgboost model
+##Xgboost model(best model candidate)
 ```{r}
 xgboost.model = train.xgboost(train.hog)
 xgboost.pre = test.xgboost(xgboost.model,test.hog)
@@ -290,7 +290,7 @@ print(cv.error.lbp)
 print(cv.error.hog)
 ```
 #Final Train & Time
-```{r, eval=FALSE}
+```{r}
 c=system.time(bp <- train.bp(lbpdata))
 d=system.time(rf <- train.rf(lbpdata))
 e=system.time(svm <- train.svm(lbpdata))
@@ -306,45 +306,7 @@ g = system.time(xgboost <- train.xgboost(hogdata))
 time_hog=list(bp=c,rf=d,svm=e,logistic=f,xgboost = g)
 
 print(time_lbp)
-#$bp
-#   user  system elapsed 
-#  0.383   0.002   0.384 
-
-#$rf
-#   user  system elapsed 
-# 59.177   0.151  59.439 
-
-#$svm
-#   user  system elapsed 
-#  1.752   0.007   1.760 
-
-#$logistic
-#   user  system elapsed 
-#  0.304   0.003   0.307 
-
-#$xgboost
-#   user  system elapsed 
-# 28.457   0.061  28.636 
 print(time_hog)
-#$bp
-#   user  system elapsed 
-#  0.266   0.001   0.266 
-
-#$rf
-#   user  system elapsed 
-# 49.142   0.172  49.444 
-
-#$svm
-#   user  system elapsed 
-#  1.518   0.010   1.528 
-
-#$logistic
-#   user  system elapsed 
-#  0.271   0.003   0.274 
-
-#$xgboost
-#   user  system elapsed 
-# 22.785   0.079  22.976 
 ```
 #Final Model
 #### We choose SVM + LBP and xgboost + HoG as our final mdoel. They both have high accuracy as well as short time usage.
