@@ -7,10 +7,11 @@ library(e1071)
 
 ############ gbm ######################
 
-test.baseline=function(model,test.data)
+test.gbm <- function(model, test.data)
 {
-  prediction=ifelse(predict(model$gbm,test.data,n.trees=model$n)>0,1,0)
-  return(prediction)
+  pred<- predict(model$fit, newdata = test.data, n.trees = model$iter, type="response")
+  pred<-data.frame(pred)
+  return(apply(pred,1,which.max)-1)
 }
 
 ############ BP network ######################
