@@ -141,7 +141,67 @@ log.model <- train.log(train.lbp)
 log.pre=test.log(log.model,test.x.lbp)
 table(log.pre, test.lbp$y)
 ```
-##xgboost
+##Xgboost
+####Tune model and choose parameters
+```{r,eval=FALSE}
+#These lines also take long time to run; we print the result instead of running it every time.
+trainnn<-as.matrix(train.hog)
+testtt<-as.matrix(test.hog)
+dtrain=xgb.DMatrix(data=trainnn[,-1],label=trainnn[,1])
+
+NROUNDS = c(500,1000)
+ETA = c(0.3)
+MAX_DEPTH = c(3,4,5,6)
+
+cv.xgb <- function(X.train, y.train, K, NROUNDS, ETA, MAX_DEPTH){
+  for (nround in NROUNDS){
+    for (eta in ETA){
+      for (max_depth in MAX_DEPTH){
+        n <- length(y.train)
+        n.fold <- floor(n/K)
+        s <- sample(rep(1:K, c(rep(n.fold, K-1), n-(K-1)*n.fold)))  
+        cv.acc <- rep(NA, K)
+        
+        for (i in 1:K){
+          train.data <- X.train[s != i,]
+          train.label <- y.train[s != i]
+          test.data <- X.train[s == i,]
+          test.label <- y.train[s == i]
+          
+          param <- list("objective" = "multi:softmax",
+                        "eval_metric" = "mlogloss",
+                        "num_class" = 3, 'eta' = eta, 'max_depth' = max_depth)
+          
+          dtrain=xgb.DMatrix(data=train.data,label=train.label)
+          
+          bst <- xgb.train(data = dtrain,  param = param, nrounds = nround)
+          pred <- predict(bst, newdata = test.data) 
+          
+          cv.acc[i] <- mean(pred == test.label)  
+        }			
+        print(paste("------Mean 5-fold cv accuracy for nround=",nround,",eta=",eta,",max_depth=",max_depth,
+                    "------",mean(cv.acc)))
+        key = c(nround,eta,max_depth)
+        CV_ERRORS[key] = mean(cv.acc)
+      
+      }
+    }
+  }
+}
+
+CV_ERRORS = list()
+cv.xgb(trainnn[,-1], trainnn[,1], 5, NROUNDS, ETA, MAX_DEPTH)
+#Results
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 3 ------ 0.8044"
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 4 ------ 0.7836"
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 5 ------ 0.8"
+#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 6 ------ 0.7936"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 3 ------ 0.7928"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 4 ------ 0.7984"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 5 ------ 0.796"
+#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 6 ------ 0.7952"
+```
+####Tuned xgboost model
 ```{r}
 xgboost.model = train.xgboost(train.lbp)
 xgboost.pre = test.xgboost(xgboost.model,test.lbp)
@@ -206,67 +266,7 @@ log.model <- train.log(train.hog)
 log.pre=test.log(log.model,test.x.hog)
 table(log.pre, test.hog$y)
 ```
-##Xgboost
-####Tune model and choose parameters
-```{r,eval=FALSE}
-#These lines also take long time to run; we print the result instead of running it every time.
-trainnn<-as.matrix(train.hog)
-testtt<-as.matrix(test.hog)
-dtrain=xgb.DMatrix(data=trainnn[,-1],label=trainnn[,1])
-
-NROUNDS = c(500,1000)
-ETA = c(0.3)
-MAX_DEPTH = c(3,4,5,6)
-
-cv.xgb <- function(X.train, y.train, K, NROUNDS, ETA, MAX_DEPTH){
-  for (nround in NROUNDS){
-    for (eta in ETA){
-      for (max_depth in MAX_DEPTH){
-        n <- length(y.train)
-        n.fold <- floor(n/K)
-        s <- sample(rep(1:K, c(rep(n.fold, K-1), n-(K-1)*n.fold)))  
-        cv.acc <- rep(NA, K)
-        
-        for (i in 1:K){
-          train.data <- X.train[s != i,]
-          train.label <- y.train[s != i]
-          test.data <- X.train[s == i,]
-          test.label <- y.train[s == i]
-          
-          param <- list("objective" = "multi:softmax",
-                        "eval_metric" = "mlogloss",
-                        "num_class" = 3, 'eta' = eta, 'max_depth' = max_depth)
-          
-          dtrain=xgb.DMatrix(data=train.data,label=train.label)
-          
-          bst <- xgb.train(data = dtrain,  param = param, nrounds = nround)
-          pred <- predict(bst, newdata = test.data) 
-          
-          cv.acc[i] <- mean(pred == test.label)  
-        }			
-        print(paste("------Mean 5-fold cv accuracy for nround=",nround,",eta=",eta,",max_depth=",max_depth,
-                    "------",mean(cv.acc)))
-        key = c(nround,eta,max_depth)
-        CV_ERRORS[key] = mean(cv.acc)
-      
-      }
-    }
-  }
-}
-
-CV_ERRORS = list()
-cv.xgb(trainnn[,-1], trainnn[,1], 5, NROUNDS, ETA, MAX_DEPTH)
-#Results
-#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 3 ------ 0.8044"
-#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 4 ------ 0.7836"
-#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 5 ------ 0.8"
-#[1] "------Mean 5-fold cv accuracy for nround= 500 ,eta= 0.3 ,max_depth= 6 ------ 0.7936"
-#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 3 ------ 0.7928"
-#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 4 ------ 0.7984"
-#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 5 ------ 0.796"
-#[1] "------Mean 5-fold cv accuracy for nround= 1000 ,eta= 0.3 ,max_depth= 6 ------ 0.7952"
-```
-##Final xgboost model
+##Xgboost model
 ```{r}
 xgboost.model = train.xgboost(train.hog)
 xgboost.pre = test.xgboost(xgboost.model,test.hog)
