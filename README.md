@@ -25,7 +25,7 @@ Xiyi Wang:
 
 Pinren Chen:
 
-Xiaoyu Zhou:
+Xiaoyu Zhou: was responsible for CNN model analysis. Conducted CNN in R for both feature extraction and classification, decreased the baseline error rate successfully but discarded R-version due to the time spend. Collaborated with Pinren to write code and debug in Python for CNN feature extraction and classification. Accelerated the Python running time.
 
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
