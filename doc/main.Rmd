@@ -1,11 +1,11 @@
 ---
 title: "Project 3 - Dogs, Fried Chicken or Blueberry Muffins?"
-author: "Group6: Sijian Xuan, Xinyao Guo, Siyi Wang, Xiaoyu Zhou, Pinren Chen"
+author: 'Group6: Sijian Xuan, Xinyao Guo, Siyi Wang, Xiaoyu Zhou, Pinren Chen'
 date: "Oct 10, 2017"
 output:
-  pdf_document: 
-    latex_engine: xelatex
   html_document: default
+  pdf_document:
+    latex_engine: xelatex
 ---
 #Install necessary packages.
 ```{r, include=FALSE}
@@ -308,5 +308,36 @@ time_hog=list(bp=c,rf=d,svm=e,logistic=f,xgboost = g)
 print(time_lbp)
 print(time_hog)
 ```
+
+# CNN model for image classfication:
+
+## step 1: install theano and lagsgne  
+#### $pip install lasagne
+#### $pip install numpy
+#### $pip install pandas
+#### $pip install -r https://raw.githubusercontent.com/Lasagne/Lasagne/v0.1/requirements.txt  *-install theano 0.7*
+
+
+## step 2: train the neural net work( environment: python 2.7) 
+### $python CNN_build.py [directory for training_set folder]
+#### The [directory for training_set folder] should be folder training_set's local path e.g. "C:/Users/zjutc/Desktop". 
+#### The training_set folder should include:
+#### images- a folder including all image files for training
+#### label_train.csv- a csv file including labels for all images
+#### The output is the result of every epoch and a CNNmodel.pkl file is saved in training_set folder. This file stores the weights for CNN.
+
+####our .pkl model and training report are saved in output folder
+
+## step 3: use the CNN model we get for validation:
+### $python CNN_predict.py [directory for test_set folder] [model_path]
+  
+#### [directory for test_set folder]  should be folder test_set's local path e.g. "C:/Users/zjutc/Desktop"
+####[model_path] should be local path for pkl file e.g."C:/Users/zjutc/Desktop/training_set/CNNmodel.pkl"
+####The output is label predicted by CNN model. It is saved in test_set and named as "label_CNN.csv"
+####Also the error rate would be printed.
+
+####We use 2500 images for training and the rest for validation. The accuracy can achieve 90%. But it can take 25 minutes for validating 500 images. So we don't choose it for our final model.
+
+
 #Final Model
 #### We choose SVM + LBP and xgboost + HoG as our final mdoel. They both have high accuracy as well as short time usage.
