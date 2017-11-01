@@ -8,18 +8,13 @@ library(randomForest)
 library(e1071)
 
 ############ gbm ######################
-
-train.baseline<-function(X, y, depth, shrinkage){
-  fit_gbm = gbm.fit(X, y,
-                    distribution = "multinomial",
-                    n.trees = 250,
-                    interaction.depth = depth, 
-                    shrinkage = shrinkage,
-                    bag.fraction = 0.5,
-                    verbose=FALSE)
-  best_iter <- gbm.perf(fit_gbm, method="OOB", plot.it = FALSE)
-  return(list(fit=fit_gbm, iter=best_iter))
+test.gbm <- function(model, test.data)
+{
+  pred<- predict(model$fit, newdata = test.data, n.trees = model$iter, type="response")
+  pred<-data.frame(pred)
+  return(apply(pred,1,which.max)-1)
 }
+
 
 ############ BP network ######################
 train.bp<- function(traindata) {
