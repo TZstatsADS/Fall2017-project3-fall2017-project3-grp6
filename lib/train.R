@@ -8,11 +8,18 @@ library(randomForest)
 library(e1071)
 
 ############ gbm ######################
-test.gbm <- function(model, test.data)
-{
-  pred<- predict(model$fit, newdata = test.data, n.trees = model$iter, type="response")
-  pred<-data.frame(pred)
-  return(apply(pred,1,which.max)-1)
+train.gbm<-function(traindata){
+  X=traindata[,-1]
+  y=traindata[,1]
+  fit_gbm = gbm.fit(X, y,
+                    distribution = "multinomial",
+                    n.trees = 10,
+                    interaction.depth = 3, 
+                    shrinkage = 0.1,
+                    bag.fraction = 0.5,
+                    verbose=FALSE)
+  best_iter <- gbm.perf(fit_gbm, method="OOB", plot.it = FALSE)
+  return(list(fit=fit_gbm, iter=best_iter))
 }
 
 
