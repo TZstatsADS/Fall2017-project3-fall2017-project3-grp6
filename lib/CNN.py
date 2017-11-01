@@ -167,5 +167,5 @@ for epoch in range(100):
     
 
 
-
+# when epoch is 69, the test accuracy is 0.9
     
