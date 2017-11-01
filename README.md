@@ -21,7 +21,7 @@ Sijian Xuan: as the group presenter, is working on the whole organization of the
 
 Xinyao Guo: tried HoG and RGB to do feature extraction and finally chose HoG. Applied logistic regression(multinomial), random forest, KNN, xgboost as candidate classification models. Tune the models by grid searching method. Discard KNN as the accuracy is only around 60%. Applied cross validation to prevent the overfitting issue.
 
-Xiyi Wang:
+Xiyi Wang:tested the baseline model and tuned parameters for gbm. Implemented hog and rgb as feature extraction method. Tested lbp feature with random forest, hog feature with random forest for error rate. Edited the in_class.R, train.R and test.R file.
 
 Pinren Chen: Responsible for CNN model analysis. Conducted CNN in python for both feature extraction and classification. Debuged and improved model with Xiaoyu. Saved the model and used it for prediction.
 
