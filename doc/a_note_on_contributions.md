@@ -21,3 +21,5 @@ Summary: In this project, we used several feature extraction such as LBP feature
 Sijian Xuan: as the group presenter, is working on the whole organization of the study. He does the research about LBP feature extraction method and choose BPNN, SVM, Random Forest, Logistic regression as well as writing the relevant code with help of Siyi Wang and Xinyao Guo. He collects everyone's code and write them in main.Rmd and write the ppt file.
 
 Xinyao Guo: tried HoG and RGB to do feature extraction and finally chose HoG. Applied logistic regression(multinomial), random forest, KNN, xgboost as candidate classification models. Tune the models by grid searching method. Discard KNN as the accuracy is only around 60%. Applied cross validation to prevent the overfitting issue.
+
+Xiaoyu Zhou: was responsible for CNN model analysis. Conducted CNN in R for both feature extraction and classification, decreased the baseline error rate successfully but discarded R-version due to the time spend. Collaborated with Pinren to write code and debug in Python for CNN feature extraction and classification, and achieved the accuracy rate >90%. Accelerated the Python running time.
