@@ -3,9 +3,9 @@ title: "Project 3 - Dogs, Fried Chicken or Blueberry Muffins?"
 author: 'Group6: Sijian Xuan, Xinyao Guo, Siyi Wang, Xiaoyu Zhou, Pinren Chen'
 date: "Oct 10, 2017"
 output:
-  html_document: default
   pdf_document:
     latex_engine: xelatex
+  html_document: default
 ---
 #Install necessary packages.
 ```{r, include=FALSE}
@@ -128,9 +128,9 @@ rf.model <- train.rf(train.lbp)
 rf.pre=test.rf(rf.model,test.x.lbp)
 table(rf.pre,test.lbp$y)
 ```
-```{r,include= FALSE, eval = FALSE}
-##SVM + LBP (not the best, just appear to show work)
+##SVM + LBP
 ####Tune Parameters: cost=10, gamma=0.01
+```{r}
 svm.model <- train.svm(train.lbp)
 svm.pre=test.svm(svm.model,test.x.lbp)
 table(svm.pre,test.lbp$y)
@@ -266,8 +266,8 @@ log.model <- train.log(train.hog)
 log.pre=test.log(log.model,test.x.hog)
 table(log.pre, test.hog$y)
 ```
-##Xgboost model(best model candidate)
-```{r}
+```{r,include=FALSE, eval=FALSE}
+##Xgboost model
 xgboost.model = train.xgboost(train.hog)
 xgboost.pre = test.xgboost(xgboost.model,test.hog)
 table(xgboost.pre, test.hog$y)
@@ -340,4 +340,4 @@ print(time_hog)
 
 
 #Final Model
-#### We choose xgboost + HoG as our final mdoel since it has high accuracy as well as short time usage.
+#### We choose SVM + LBP as our final mdoel since it has high accuracy as well as short time usage.
